@@ -4,6 +4,7 @@
  */
 
 #include "mbed.h"
+#include "Nieh.h"
 
 int main()
 {

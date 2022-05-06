@@ -24,7 +24,8 @@ class Server:
                 print("Received from socket server:", data)
                 [start, destination] = data.split(' ')
                 # start, destination -> coords
-                path = ' '.join(self.getPath((10,10), (3,1)))
+                path = ' '.join(self.getPath((10,10), (1,3)))
+                print(path)
                 conn.send(bytes(path, encoding='utf-8'))
     
     def setMap(self, map):
@@ -85,7 +86,7 @@ class Server:
 
         hasVisited = []
         currentVertex = start
-        priorityQueue.push([(currentVertex, 'None', 0, manhattanDistance(currentVertex, destination))], 0 + manhattanDistance(currentVertex, destination))
+        priorityQueue.push([(currentVertex, ('None', -1), 0, manhattanDistance(currentVertex, destination))], 0 + manhattanDistance(currentVertex, destination))
         
         while True:
             vertices_actions_costs = priorityQueue.pop()
@@ -100,18 +101,31 @@ class Server:
             for nextVertex in self.__adjList[currentVertex]:
                 if nextVertex not in vertices:
                     if currentVertex[0] + 1 == nextVertex[0]:
-                        action = 'South'
+                        action = ('South', currentVertex[2])
                     elif currentVertex[0] - 1 == nextVertex[0]:
-                        action = 'North'
+                        action = ('North', currentVertex[2])
                     elif currentVertex[1] + 1 == nextVertex[1]:
-                        action = 'East'
+                        action = ('East', currentVertex[2])
                     elif currentVertex[1] - 1 == nextVertex[1]:
-                        action = 'West'
+                        action = ('West', currentVertex[2])
                     tmp = vertices_actions_costs[:]
                     tmp.append((nextVertex, action, currentCumulativeCost + 1, manhattanDistance(nextVertex, destination)))
                     priorityQueue.push(tmp, currentCumulativeCost + 1 + manhattanDistance(nextVertex, destination))
             hasVisited.append(currentVertex)
-        return [x[1] for x in vertices_actions_costs][1:]
+
+        # (original direction, new direction): action on steering wheel
+        turnLUT = {('East', 'East'):   'Straight', ('East', 'South'): 'Right', ('East', 'North'): 'Left',
+                   ('South', 'South'): 'Straight', ('South', 'West'): 'Right', ('South', 'East'): 'Left',
+                   ('West', 'West'):   'Straight', ('West', 'North'): 'Right', ('West', 'South'): 'Left',
+                   ('North', 'North'): 'Straight', ('North', 'East'): 'Right', ('North', 'West'): 'Left'}
+        # actions = [(action, v_type)_1, (action, v_type)_2, (action, v_type)_3, ...]
+        actions = [x[1] for x in vertices_actions_costs][1:]
+        steering = []
+        for i in range(len(actions)-1):
+            print(actions[i], actions[i+1])
+            if actions[i+1][1] == 3:
+                steering.append(turnLUT[(actions[i][0], actions[i+1][0])])
+        return steering
 
 if __name__ == '__main__':
     server = Server()

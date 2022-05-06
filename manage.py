@@ -32,12 +32,10 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
-
+'''
 class RemoteWebServer():
-    '''
     A controller that repeatedly polls a remote webserver and expects
     the response to be angle, throttle and drive mode. 
-    '''
     
     def __init__(self, remote_url, connection_timeout=.25):
 
@@ -53,10 +51,8 @@ class RemoteWebServer():
 
         
     def update(self):
-        '''
         Loop to run in separate thread the updates angle, throttle and 
         drive mode. 
-        '''
 
         while True:
             #get latest value from server
@@ -64,9 +60,7 @@ class RemoteWebServer():
 
 
     def run_threaded(self, img_arr=None):
-        ''' 
         Return the last state given from the remote server.
-        '''
         
         #return last returned last remote response.
         if img_arr is not None:
@@ -108,10 +102,8 @@ class RemoteWebServer():
             return 0.0,0.0,'user',False
         
     def run(self, img_arr=None):
-        '''
         Posts current car sensor data to webserver and returns
         angle and throttle recommendations. 
-        '''
 
         if img_arr is not None:
             print("img_arr: ", img_arr)
@@ -154,7 +146,7 @@ class RemoteWebServer():
         
     def shutdown(self):
         pass
-
+'''
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
     '''
@@ -242,7 +234,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
         V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
-    '''    
+    
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -273,7 +265,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=False)
-
+   '''
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()
     V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])

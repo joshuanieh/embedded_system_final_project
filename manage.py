@@ -16,7 +16,8 @@ Options:
 import os
 import time
 import json
-import requests
+#import requests
+import socket
 
 from docopt import docopt
 import numpy as np
@@ -32,123 +33,77 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
-'''
-class RemoteWebServer():
-    A controller that repeatedly polls a remote webserver and expects
-    the response to be angle, throttle and drive mode. 
-    
-    def __init__(self, remote_url, connection_timeout=.25):
 
-        self.control_url = remote_url
+
+class Controller():
+    def __init__(self, start, destination):
+
         self.time = 0.
         self.angle = 0.
         self.throttle = 0.
         self.mode = 'user'
         self.recording = False
+        '''
+        self.data = json.dumps({"start": start, "destination": destination})
         #use one session for all requests
         self.session = requests.Session()
+        response = None 
+        while response == None:
+            try:
+                response = self.session.post(self.control_url, files={'json': self.data}, timeout=0.25)
+                #The actions
+                print(response.text)
+            except (requests.exceptions.ReadTimeout) as err:
+                print("\n Request took too long. Retrying")
+                
+            except (requests.ConnectionError) as err:
+                #try to reconnect every 3 seconds
+                print("\n Vehicle could not connect to server. Make sure you've " + 
+                     "started your server and you're referencing the right port.")
+                time.sleep(3)
+        '''
+        
 
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((cfg.REMOTE_SERVER_ADDR, cfg.REMOTE_SERVER_PORT))
+
+        while True:
+            outdata = str(start) + " " + str(destination)
+            print('send: ' + outdata)
+            s.send(outdata.encode())
+    
+            indata = s.recv(1024)
+            if len(indata) != 0:
+                print('recv: ' + indata.decode())
+                s.close()
+                break
+        
 
         
     def update(self):
-        Loop to run in separate thread the updates angle, throttle and 
-        drive mode. 
-
         while True:
             #get latest value from server
             self.angle, self.throttle, self.mode, self.recording = self.run()
 
 
     def run_threaded(self, img_arr=None):
-        Return the last state given from the remote server.
-        
         #return last returned last remote response.
         if img_arr is not None:
-            print("img_arr: ", img_arr)
-            print("type: ", type(img_arr))
-            print("shape: ", img_arr.shape)
-            data = {'image': ""}
-            for x in img_arr:
-                for y in x:
-                    for z in y:
-                        data['image'] += (' ' + str(z))
-            response = None
-            while response == None:
-                try:
-                    response = self.session.post(self.control_url, 
-                                                 files={'json': json.dumps(data)},
-                                                 timeout=0.25)
-                    print(response.text) 
-                except (requests.exceptions.ReadTimeout) as err:
-                    print("\n Request took too long. Retrying")
-                    #Lower throttle to prevent runaways.
-                    return self.angle, self.throttle * .8, None
-                
-                except (requests.ConnectionError) as err:
-                    #try to reconnect every 3 seconds
-                    print("\n Vehicle could not connect to server. Make sure you've " + 
-                        "started your server and you're referencing the right port.")
-                    time.sleep(3)
-            
-    
-            data = json.loads(response.text)
-            angle = float(data['angle'])
-            throttle = float(data['throttle'])
-            drive_mode = str(data['drive_mode'])
-            recording = bool(data['recording'])
-        
             return angle, throttle, drive_mode, recording
         else:
             return 0.0,0.0,'user',False
         
     def run(self, img_arr=None):
-        Posts current car sensor data to webserver and returns
-        angle and throttle recommendations. 
-
         if img_arr is not None:
-            print("img_arr: ", img_arr)
-            print("type: ", type(img_arr))
-            print("shape: ", img_arr.shape)
-            data = {'image': ""}
-            for x in img_arr:
-                for y in x:
-                    for z in y:
-                        data['image'] += (' ' + str(z))
-            print(data['image'])
-            response = None
-            while response == None:
-                try:
-                    response = self.session.post(self.control_url, 
-                                                 files={'json': json.dumps(data)},
-                                                 timeout=0.25)
-                    print(response.text) 
-                except (requests.exceptions.ReadTimeout) as err:
-                    print("\n Request took too long. Retrying")
-                    #Lower throttle to prevent runaways.
-                    return self.angle, self.throttle * .8, None
-                
-                except (requests.ConnectionError) as err:
-                    #try to reconnect every 3 seconds
-                    print("\n Vehicle could not connect to server. Make sure you've " + 
-                        "started your server and you're referencing the right port.")
-                    time.sleep(3)
-            
-    
-            data = json.loads(response.text)
-            angle = float(data['angle'])
-            throttle = float(data['throttle'])
-            drive_mode = str(data['drive_mode'])
-            recording = bool(data['recording'])
-        
             return angle, throttle, drive_mode, recording
         else:
             return 0.0,0.0,'user',False
         
     def shutdown(self):
         pass
-'''
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
+
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[], start = 0, destination = 5):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -234,7 +189,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
         V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
-    
+    '''
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -259,13 +214,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     '''
-    ctr = RemoteWebServer(cfg.REMOTE_SERVER_ADDR)
-    
+    #ctr = RemoteWebServer(cfg.REMOTE_SERVER_ADDR)
+    ctr = Controller(start, destination)
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=False)
-   '''
+          threaded=True)
+   
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()
     V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])

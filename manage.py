@@ -103,6 +103,65 @@ class Controller():
         pass
 
 
+
+class WebController():
+    def __init__(self, start, destination):
+
+        self.time = 0.
+        self.angle = 0.
+        self.throttle = 0.
+        self.mode = 'user'
+        self.recording = False
+        '''
+        self.data = json.dumps({"start": start, "destination": destination})
+        #use one session for all requests
+        self.session = requests.Session()
+        response = None 
+        while response == None:
+            try:
+                response = self.session.post(self.control_url, files={'json': self.data}, timeout=0.25)
+                #The actions
+                print(response.text)
+            except (requests.exceptions.ReadTimeout) as err:
+                print("\n Request took too long. Retrying")
+                
+            except (requests.ConnectionError) as err:
+                #try to reconnect every 3 seconds
+                print("\n Vehicle could not connect to server. Make sure you've " + 
+                     "started your server and you're referencing the right port.")
+                time.sleep(3)
+        '''
+        
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((cfg.REMOTE_SERVER_ADDR, cfg.REMOTE_SERVER_PORT))
+        
+    # def update(self):
+    #     while True:
+    #         #get latest value from server
+    #         self.angle, self.throttle, self.mode, self.recording = self.run()
+
+
+    # def run_threaded(self, img_arr=None):
+    #     #return last returned last remote response.
+    #     if img_arr is not None:
+    #         return angle, throttle, drive_mode, recording
+    #     else:
+    #         return 0.0,0.0,'user',False
+        
+    def run(self):
+        outdata = "request for control"
+        # print('send: ' + outdata)
+        s.send(outdata.encode())
+
+        indata = s.recv(1024)
+        data = json.loads(indata.decode())
+        return float(data["angle"]),float(data["throttle"]),'user',False
+        
+    def shutdown(self):
+        pass
+
+
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[], start = 0, destination = 5):
     '''
     Construct a working robotic vehicle from many parts.
@@ -215,9 +274,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           threaded=True)
     '''
     #ctr = RemoteWebServer(cfg.REMOTE_SERVER_ADDR)
-    ctr = Controller(start, destination)
+    ctr = WebController(start, destination)
+    # inputs=['cam/image_array'],
     V.add(ctr, 
-          inputs=['cam/image_array'],
+          inputs=[],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
    

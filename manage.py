@@ -18,6 +18,7 @@ import time
 import json
 #import requests
 import socket
+import serial
 
 from docopt import docopt
 import numpy as np
@@ -33,7 +34,61 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
+'''
+import smbus
+import time
+bus = smbus.SMBus(1)
+address = 0x70
 
+def bearing255():
+        bear = bus.read_byte_data(address, 0)
+        return bear
+
+def bearing3599():
+        bear1 = bus.read_byte_data(address, 2)
+        bear2 = bus.read_byte_data(address, 3)
+        bear = (bear1 << 8) + bear2
+        bear = bear/10.0
+        return bear
+
+while True:
+        bearing = bearing3599()     #this returns the value to 1 decimal place in degrees.
+        bear255 = bearing255()      #this returns the value as a byte between 0 and 255.
+        print(bearing)
+        print(bear255)
+        time.sleep(1)
+'''
+ser = serial.Serial("/dev/ttyS0", 9600)
+while True:
+    print(1)
+    received_data = ser.read()
+    print("received_data = ", received_data)
+        
+    time.sleep(0.03)
+    data_left = ser.inWaiting()
+    print(data_left, ser.read(data_left))
+class Ultrasonic():
+    def __init__(self):
+        #connect the pin to MBED
+        '''
+        import wiringgpi
+        wiringpi = wiringPiSetup()
+        serial = wiringpi.serialOpen('/dev/ttyAMA0', 9600)
+        wiringpi.serial
+        '''
+        self.ser = serial.Serial("/dev/ttyAMA0", 9600)
+    def run(self):
+        received_data = self.ser.read()
+        print("received_data = ", received_data)
+        
+        time.sleep(0.03)
+        data_left = self.ser.inWaiting()
+        print(data_left, self.ser.read(data_left))
+        #received_data += self.ser.read(data_left)
+        
+        return int(received_data)
+    def shutdown(self):
+        pass
 
 class Controller():
     def __init__(self, start, destination):
@@ -43,6 +98,8 @@ class Controller():
         self.throttle = 0.
         self.mode = 'user'
         self.recording = False
+        self.actions = []
+        self.actionIndex = 0;
         '''
         self.data = json.dumps({"start": start, "destination": destination})
         #use one session for all requests
@@ -62,11 +119,11 @@ class Controller():
                      "started your server and you're referencing the right port.")
                 time.sleep(3)
         '''
-        
-
+        ''' 
+        print("Before connecting")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((cfg.REMOTE_SERVER_ADDR, cfg.REMOTE_SERVER_PORT))
-
+        print("Connect successfully")
         while True:
             outdata = str(start) + " " + str(destination)
             print('send: ' + outdata)
@@ -77,27 +134,30 @@ class Controller():
                 print('recv: ' + indata.decode())
                 s.close()
                 break
-        
+            self.actions = indata.split(" ")
+         '''
 
-        
-    def update(self):
-        while True:
+    '''
+    #def update(self):
+        #while True:
             #get latest value from server
-            self.angle, self.throttle, self.mode, self.recording = self.run()
+            #self.angle, self.throttle, self.mode, self.recording = self.run()
 
 
-    def run_threaded(self, img_arr=None):
+    def run_threaded(self, ultraFront, img_arr=None, RFID=-1):
         #return last returned last remote response.
-        if img_arr is not None:
-            return angle, throttle, drive_mode, recording
-        else:
-            return 0.0,0.0,'user',False
+        #if img_arr is not None:
+        if RFID != -1:
+            self.actionIndex += 1
+        return 0.0,ultraFront * 0.01,'user',False
+    ''' 
+    def run(self, ultraFront, img_arr=None, RFID=-1):
+        #return last returned last remote response.
+        #if img_arr is not None:
+        if RFID != -1:
+            self.actionIndex += 1
+        return 0.0,ultraFront * 0.01,'user',False
         
-    def run(self, img_arr=None):
-        if img_arr is not None:
-            return angle, throttle, drive_mode, recording
-        else:
-            return 0.0,0.0,'user',False
         
     def shutdown(self):
         pass
@@ -210,16 +270,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     
     
     V.add(ctr, 
-          inputs=['cam/image_array'],
+          inputs=['cam/image_array', 'user/ultra'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     '''
+
+    ultrasonic = Ultrasonic()
+    V.add(ultrasonic, inputs = [], outputs = ['user/ultraFront'], threaded = False)
     #ctr = RemoteWebServer(cfg.REMOTE_SERVER_ADDR)
     ctr = Controller(start, destination)
     V.add(ctr, 
-          inputs=['cam/image_array'],
+          inputs=['user/ultraFront', 'cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
+          threaded=False)
    
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()

@@ -16,17 +16,24 @@ print('Socket is listening..')
 ServerSideSocket.listen(5)
 def multi_threaded_client(connection):
     global throttle
-    connection.send(str.encode('Server is working:'))
     while True:
         data = connection.recv(2048)
+        req = data.decode('utf-8')
         print(data)
         if not data:
             break
-        if data.decode('utf-8') == "request for control":
-            response = {"angle": 0.0, "throttle": 0.01*throttle}
-            connection.sendall(json.dumps(response))
-        if (data.decode('utf-8'))[0:8] == "distance":
-            throttle = int((data.decode('utf-8'))[10:])
+        if req == "request for control":
+            if throttle * 0.007 > 1:
+                throttle = 1.0
+            else: 
+                throttle *= 0.007
+            response = {"angle": 0.0, "throttle": throttle}
+            connection.sendall(str.encode(json.dumps(response)))
+        if req[0:8] == "distance":
+            if "distance" in req[8:]:
+                continue
+            else:
+                throttle = int((data.decode('utf-8'))[10:])
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

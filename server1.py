@@ -31,10 +31,9 @@ def multi_threaded_client(connection):
                 continue
             else:
                 throttle = int((data.decode('utf-8'))[10:])
-                if throttle * 0.007 > 1:
-                    throttle = 1.0
-                else: 
-                    throttle *= 0.007
+                throttle = 2**throttle/320
+                if throttle > 0.8:
+                    throttle = 0.8
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

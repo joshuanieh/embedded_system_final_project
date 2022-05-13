@@ -58,6 +58,7 @@ while True:
         print(bear255)
         time.sleep(1)
 '''
+'''
 ser = serial.Serial("/dev/ttyS0", 9600)
 while True:
     print(1)
@@ -67,6 +68,7 @@ while True:
     time.sleep(0.03)
     data_left = ser.inWaiting()
     print(data_left, ser.read(data_left))
+'''
 class Ultrasonic():
     def __init__(self):
         #connect the pin to MBED
@@ -340,11 +342,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     ctr = WebController(start, destination)
     # inputs=['cam/image_array'],
     V.add(ctr, 
-<<<<<<< HEAD
-          inputs=['user/ultraFront', 'cam/image_array'],
-=======
-          inputs=[],
->>>>>>> cdc6c4e391f718f6f3ad86f06cf619eaab3c2b98
+          inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=False)
    

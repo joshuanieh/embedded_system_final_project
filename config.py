@@ -232,5 +232,5 @@ PID_THROTTLE = 0.2                  # constant throttle value during path follow
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 
-REMOTE_SERVER_ADDR = "192.168.50.226"
+REMOTE_SERVER_ADDR = "192.168.50.98"
 REMOTE_SERVER_PORT = 8080

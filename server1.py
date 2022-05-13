@@ -23,10 +23,7 @@ def multi_threaded_client(connection):
         if not data:
             break
         if req == "request for control":
-            if throttle * 0.007 > 1:
-                throttle = 1.0
-            else: 
-                throttle *= 0.007
+            print(throttle)
             response = {"angle": 0.0, "throttle": throttle}
             connection.sendall(str.encode(json.dumps(response)))
         if req[0:8] == "distance":
@@ -34,6 +31,10 @@ def multi_threaded_client(connection):
                 continue
             else:
                 throttle = int((data.decode('utf-8'))[10:])
+                if throttle * 0.007 > 1:
+                    throttle = 1.0
+                else: 
+                    throttle *= 0.007
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

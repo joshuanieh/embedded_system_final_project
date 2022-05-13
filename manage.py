@@ -72,12 +72,10 @@ while True:
 class Ultrasonic():
     def __init__(self):
         #connect the pin to MBED
-        '''
         import wiringgpi
         wiringpi = wiringPiSetup()
         serial = wiringpi.serialOpen('/dev/ttyAMA0', 9600)
         wiringpi.serial
-        '''
         self.ser = serial.Serial("/dev/ttyAMA0", 9600)
     def run(self):
         received_data = self.ser.read()
@@ -89,78 +87,6 @@ class Ultrasonic():
         #received_data += self.ser.read(data_left)
         
         return int(received_data)
-    def shutdown(self):
-        pass
-
-class Controller():
-    def __init__(self, start, destination):
-
-        self.time = 0.
-        self.angle = 0.
-        self.throttle = 0.
-        self.mode = 'user'
-        self.recording = False
-        self.actions = []
-        self.actionIndex = 0;
-        '''
-        self.data = json.dumps({"start": start, "destination": destination})
-        #use one session for all requests
-        self.session = requests.Session()
-        response = None 
-        while response == None:
-            try:
-                response = self.session.post(self.control_url, files={'json': self.data}, timeout=0.25)
-                #The actions
-                print(response.text)
-            except (requests.exceptions.ReadTimeout) as err:
-                print("\n Request took too long. Retrying")
-                
-            except (requests.ConnectionError) as err:
-                #try to reconnect every 3 seconds
-                print("\n Vehicle could not connect to server. Make sure you've " + 
-                     "started your server and you're referencing the right port.")
-                time.sleep(3)
-        '''
-        ''' 
-        print("Before connecting")
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((cfg.REMOTE_SERVER_ADDR, cfg.REMOTE_SERVER_PORT))
-        print("Connect successfully")
-        while True:
-            outdata = str(start) + " " + str(destination)
-            print('send: ' + outdata)
-            s.send(outdata.encode())
-    
-            indata = s.recv(1024)
-            if len(indata) != 0:
-                print('recv: ' + indata.decode())
-                s.close()
-                break
-            self.actions = indata.split(" ")
-         '''
-
-    '''
-    #def update(self):
-        #while True:
-            #get latest value from server
-            #self.angle, self.throttle, self.mode, self.recording = self.run()
-
-
-    def run_threaded(self, ultraFront, img_arr=None, RFID=-1):
-        #return last returned last remote response.
-        #if img_arr is not None:
-        if RFID != -1:
-            self.actionIndex += 1
-        return 0.0,ultraFront * 0.01,'user',False
-    ''' 
-    def run(self, ultraFront, img_arr=None, RFID=-1):
-        #return last returned last remote response.
-        #if img_arr is not None:
-        if RFID != -1:
-            self.actionIndex += 1
-        return 0.0,ultraFront * 0.01,'user',False
-        
-        
     def shutdown(self):
         pass
 
@@ -195,8 +121,14 @@ class WebController():
         '''
         
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((cfg.REMOTE_SERVER_ADDR, cfg.REMOTE_SERVER_PORT))
+        #self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        while True:
+            try:
+                self.s = socket.socket()
+                self.s.connect((cfg.REMOTE_SERVER_ADDR, cfg.REMOTE_SERVER_PORT))
+                break
+            except:
+                continue
         
     # def update(self):
     #     while True:
@@ -210,15 +142,18 @@ class WebController():
     #         return angle, throttle, drive_mode, recording
     #     else:
     #         return 0.0,0.0,'user',False
-        
-    def run(self):
+    
+    def run(self, img_arr=None):
+        print('! begin')
+        if img_arr is None:
+            return 0.0, 0.0, 'user', False
         outdata = "request for control"
         # print('send: ' + outdata)
-        s.send(outdata.encode())
+        self.s.send(outdata.encode())
 
-        indata = s.recv(1024)
+        indata = self.s.recv(1024)
         data = json.loads(indata.decode())
-        return float(data["angle"]),float(data["throttle"]),'user',False
+        return float(data["angle"]),float(data["throttle"]),'user',True
         
     def shutdown(self):
         pass
@@ -336,11 +271,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           threaded=True)
     '''
 
-    ultrasonic = Ultrasonic()
-    V.add(ultrasonic, inputs = [], outputs = ['user/ultraFront'], threaded = False)
+    #ultrasonic = Ultrasonic()
+    #V.add(ultrasonic, inputs = [], outputs = ['user/ultraFront'], threaded = False)
     #ctr = RemoteWebServer(cfg.REMOTE_SERVER_ADDR)
     ctr = WebController(start, destination)
     # inputs=['cam/image_array'],
+    #inputs=['user/ultraFront', 'cam/image_array'],
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],

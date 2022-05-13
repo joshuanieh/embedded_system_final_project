@@ -47,8 +47,8 @@ DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_
 
 #STEERING
 STEERING_CHANNEL = 0            #channel on the 9685 pwm board 0-15
-STEERING_LEFT_PWM = 100         #pwm value for full left steering
-STEERING_RIGHT_PWM = 550        #pwm value for full right steering
+STEERING_LEFT_PWM = 300         #pwm value for full left steering
+STEERING_RIGHT_PWM = 700        #pwm value for full right steering
 
 #THROTTLE
 THROTTLE_CHANNEL = 0            #channel on the 9685 pwm board 0-15
@@ -233,4 +233,5 @@ SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 
 REMOTE_SERVER_ADDR = "192.168.50.98"
-REMOTE_SERVER_PORT = 8080
+# REMOTE_SERVER_ADDR = "192.168.50.226"
+REMOTE_SERVER_PORT = 6531

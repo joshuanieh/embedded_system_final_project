@@ -4,7 +4,7 @@ import socket
 import json
 import util
 
-HOST = '192.168.50.226' # IP address
+HOST = '192.168.50.98' # IP address
 PORT = 8080 # Port to listen on (use ports > 1023)
 
 class Server:

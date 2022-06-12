@@ -1,7 +1,11 @@
+from dis import Instruction
 import socket
 import os
 from _thread import *
 import json
+from map import * 
+from steer import * 
+
 ServerSideSocket = socket.socket()
 host = '192.168.50.226'
 port = 6531
@@ -24,6 +28,12 @@ def multi_threaded_client(connection):
     global dis
     global right_dis
     global left_dis
+    last_dis_up = 1201
+    node_index = 0
+    route = route1[0]
+    car_pos = route1[1]
+    destination_index = len(route1[0]) - 1
+    
     while True:
         data = connection.recv(2048)
         req = data.decode('utf-8')
@@ -48,6 +58,7 @@ def multi_threaded_client(connection):
                 dis = int(dis_list[0])
                 dis_left = int(dis_list[1])
                 dis_right = int(dis_list[2])
+                dis_up = int(dis_list[3])
 
                 throttle = dis/500
                 if throttle > 0.5:
@@ -55,23 +66,50 @@ def multi_threaded_client(connection):
                 
                 right_angle = dis_right
                 left_angle = dis_left
-                if right_angle == 5:
-                    right_angle = 4.9
-                if left_angle == 5:
-                    left_angle = 4.9
+                if dis_right == 5:
+                    dis_right = 4.9
+                if dis_left == 5:
+                    dis_left = 4.9
 
-                right_angle = 1/(right_angle - 5)
+                right_angle = 1/(dis_right - 5)
                 if right_angle < 0 or right_angle > 1:
                     right_angle = -1
                 else:
                     right_angle *= -1
 
-                left_angle = 1/(left_angle - 5)
+                left_angle = 1/(dis_left - 5)
                 if left_angle < 0 or left_angle > 1:
                     left_angle = 1
                 else:
                     left_angle *= 1
                 angle = left_angle + right_angle
+
+                if dis_up < 50: # ÂàÅs
+                    if dis_up - last_dis_up < 3:
+                        if instruction == 0:
+                            pass
+                        elif instruction == 1 and dis_left > 3: # LEFT
+                            angle = -1 #+ 0.01 / max(0.1, dis_left)
+                        elif instruction == 2 and dis_right > 3: # RIGHT
+                            angle = 1 #- 0.01 / max(0.1, dis_right)
+                    else:
+                        if node_index == destination_index:
+                            throttle = 0 # finish
+                        else:
+                            node_index += 1
+                            # node name
+                            node = route[node_index]
+                            next_node_pos = map1[node].index(node) # Search adjacency list
+                            instruction = getDirection(car_pos, next_node_pos)
+                            if instruction == 0: # ADVANCE
+                                throttle = 0.5
+                            elif instruction == 1: # LEFT
+                                if angle > -0.8:
+                                    angle = -1
+                            elif instruction == 2: # RIGHT
+                                if angle < 0.8:
+                                    angle = 1
+                            car_pos = next_node_pos
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

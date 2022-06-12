@@ -98,6 +98,7 @@ class WebController():
         self.time = 0.
         self.angle = 0.
         self.throttle = 0.
+        self.prevThrottle = 0.
         self.mode = 'user'
         self.recording = False
         '''
@@ -144,15 +145,19 @@ class WebController():
     #         return 0.0,0.0,'user',False
     
     def run(self, img_arr=None):
-        print('! begin')
-        if img_arr is None:
+        if img_arr is None or self.prevThrottle == -1:
             return 0.0, 0.0, 'user', False
         outdata = "request for control"
-        # print('send: ' + outdata)
+        if self.prevThrottle < 0.4:
+            outdata = "request for start"
+        print('send: ' + outdata)
         self.s.send(outdata.encode())
 
         indata = self.s.recv(1024)
         data = json.loads(indata.decode())
+        self.prevThrottle = float(data["throttle"])
+        if float(data["throttle"]) == -1:
+            return 0.0, 0.0, 'user', True
         return float(data["angle"]),float(data["throttle"]),'user',True
         
     def shutdown(self):
@@ -245,7 +250,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
         V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
-    '''
+    
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -259,6 +264,17 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             V.add(netwkJs, threaded=True)
             ctr.js = netwkJs
 
+        V.add(ctr, 
+              inputs=['cam/image_array'],
+              outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+              threaded=True)
+    else:
+        ctr = WebController(start, destination)
+        V.add(ctr, 
+              inputs=['cam/image_array'],
+              outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+              threaded=False)
+    '''
     else:        
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
@@ -274,13 +290,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     #ultrasonic = Ultrasonic()
     #V.add(ultrasonic, inputs = [], outputs = ['user/ultraFront'], threaded = False)
     #ctr = RemoteWebServer(cfg.REMOTE_SERVER_ADDR)
-    ctr = WebController(start, destination)
     # inputs=['cam/image_array'],
     #inputs=['user/ultraFront', 'cam/image_array'],
-    V.add(ctr, 
-          inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=False)
    
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()

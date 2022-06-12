@@ -33,6 +33,7 @@ def multi_threaded_client(connection):
     route = route1[0]
     car_pos = route1[1]
     destination_index = len(route1[0]) - 1
+    finish = False
     
     while True:
         data = connection.recv(2048)
@@ -41,11 +42,19 @@ def multi_threaded_client(connection):
         if not data:
             break
         if req == "request for control":
-            print("throttle: ", throttle, ", angle: ", angle)
+            if finish:
+                throttle = -1
+                print("finish")
+            else:
+                print("throttle: ", throttle, ", angle: ", angle)
             response = {"angle": angle, "throttle": throttle}
             connection.sendall(str.encode(json.dumps(response)))
         if req == "request for start":
-            print("throttle: ", 0.7, ", angle: ", angle)
+            if finish:
+                throttle = -1
+                print("finish")
+            else:
+                print("throttle: ", 0.7, ", angle: ", angle)
             response = {"angle": angle, "throttle": 0.7}
             if dis < 50:
                 response = {"angle": angle, "throttle": throttle}
@@ -84,31 +93,30 @@ def multi_threaded_client(connection):
                     left_angle *= 1
                 angle = left_angle + right_angle
 
-                if dis_up < 50: # ÂàÅs
+                if dis_up < 50: # Turn
                     if dis_up - last_dis_up < 3:
                         if instruction == 0:
                             pass
                         elif instruction == 1 and dis_left > 3: # LEFT
-                            angle = -1 #+ 0.01 / max(0.1, dis_left)
+                            angle = -1
                         elif instruction == 2 and dis_right > 3: # RIGHT
-                            angle = 1 #- 0.01 / max(0.1, dis_right)
+                            angle = 1
                     else:
                         if node_index == destination_index:
-                            throttle = 0 # finish
+                            finish = True # finish
                         else:
+                            node = route[node_index]
                             node_index += 1
                             # node name
-                            node = route[node_index]
-                            next_node_pos = map1[node].index(node) # Search adjacency list
+                            next_node = route[node_index]
+                            next_node_pos = map1[node].index(next_node) # Search adjacency list
                             instruction = getDirection(car_pos, next_node_pos)
-                            if instruction == 0: # ADVANCE
-                                throttle = 0.5
-                            elif instruction == 1: # LEFT
-                                if angle > -0.8:
-                                    angle = -1
-                            elif instruction == 2: # RIGHT
-                                if angle < 0.8:
-                                    angle = 1
+                            if instruction == 0:
+                                pass
+                            elif instruction == 1 and dis_left > 3: # LEFT
+                                angle = -1
+                            elif instruction == 2 and dis_right > 3: # RIGHT
+                                angle = 1
                             car_pos = next_node_pos
     connection.close()
 while True:

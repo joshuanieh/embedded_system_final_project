@@ -15,6 +15,8 @@ throttle = 0.0
 dis = 100.0
 right_dis = 100.0
 left_dis = 100.0
+finish = False
+measured = False
 
 try:
     ServerSideSocket.bind((host, port))
@@ -28,12 +30,14 @@ def multi_threaded_client(connection):
     global dis
     global right_dis
     global left_dis
+    global finish
+    global measured
     last_dis_up = 1201
     node_index = 0
     route = route1[0]
     car_pos = route1[1]
     destination_index = len(route1[0]) - 1
-    finish = False
+    last_dis = 1201
     
     while True:
         data = connection.recv(2048)
@@ -45,21 +49,34 @@ def multi_threaded_client(connection):
             if finish:
                 throttle = -1
                 print("finish")
-            else:
+            elif measured:
+                if dis > 20 and dis == last_dis: # Start up
+                    throttle = 0.7
                 print("throttle: ", throttle, ", angle: ", angle)
-            response = {"angle": angle, "throttle": throttle}
+                response = {"angle": angle, "throttle": throttle}
+            else:
+                print("throttle: ", 0.0, ", angle: ", 0.0)
+                response = {"angle": 0.0, "throttle": 0.0}
+
             connection.sendall(str.encode(json.dumps(response)))
         if req == "request for start":
             if finish:
                 throttle = -1
                 print("finish")
+            elif measured:
+                if dis > 50:
+                    print("throttle: ", 0.7, ", angle: ", angle)
+                    response = {"angle": angle, "throttle": 0.7}
+                else:
+                    print("throttle: ", throttle, ", angle: ", angle)
+                    response = {"angle": angle, "throttle": throttle}
             else:
-                print("throttle: ", 0.7, ", angle: ", angle)
-            response = {"angle": angle, "throttle": 0.7}
-            if dis < 50:
-                response = {"angle": angle, "throttle": throttle}
+                print("throttle: ", 0.0, ", angle: ", 0.0)
+                response = {"angle": 0.0, "throttle": 0.0}
+            
             connection.sendall(str.encode(json.dumps(response)))
         if req[0:8] == "distance":
+            measured = True
             if "distance" in req[8:]:
                 continue
             else:
@@ -94,12 +111,17 @@ def multi_threaded_client(connection):
                 angle = left_angle + right_angle
 
                 if dis_up < 50: # Turn
-                    if dis_up - last_dis_up < 3:
+                    if dis > 15 and dis == last_dis:
+                        throttle = 0.7
+                    if last_dis_up < 50:
                         if instruction == 0:
+                            print("advance")
                             pass
                         elif instruction == 1 and dis_left > 3: # LEFT
+                            print("left")
                             angle = -1
                         elif instruction == 2 and dis_right > 3: # RIGHT
+                            print("right")
                             angle = 1
                     else:
                         if node_index == destination_index:
@@ -112,12 +134,17 @@ def multi_threaded_client(connection):
                             next_node_pos = map1[node].index(next_node) # Search adjacency list
                             instruction = getDirection(car_pos, next_node_pos)
                             if instruction == 0:
+                                print("advance")
                                 pass
                             elif instruction == 1 and dis_left > 3: # LEFT
+                                print("left")
                                 angle = -1
                             elif instruction == 2 and dis_right > 3: # RIGHT
+                                print("right")
                                 angle = 1
                             car_pos = next_node_pos
+                last_dis_up = dis_up
+                last_dis = dis
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

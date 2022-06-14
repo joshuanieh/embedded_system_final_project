@@ -53,7 +53,7 @@ def multi_threaded_client(connection):
             if finish:
                 throttle = -1
                 print("finish")
-                continue
+                response = {"angle": angle, "throttle": throttle}
             elif measured:
                 if dis > 20 and dis == last_dis: # Start up
                     throttle = 0.7
@@ -68,7 +68,7 @@ def multi_threaded_client(connection):
             if finish:
                 throttle = -1
                 print("finish")
-                continue
+                response = {"angle": angle, "throttle": throttle}
             elif measured:
                 if dis > 20:
                     print("throttle: ", 0.7, ", angle: ", angle)
@@ -135,8 +135,9 @@ def multi_threaded_client(connection):
                             angle = 1
                     else:
                         if node_index == destination_index:
-                            finish = True # finish
-                            print("map finish")
+                            instruction = -1
+                            finish = True
+                            print("arrive final node")
                         else:
                             node = route[node_index]
                             print(node)
@@ -160,14 +161,6 @@ def multi_threaded_client(connection):
                 last_dis_up = dis_up
                 last_dis_back = dis_back
                 last_dis = dis
-        else:
-            try:
-                img_arr = json.loads(req)
-                print("Arrow Detect: ", arrowDetect(img_arr))
-                response = {"angle": 0.0, "throttle": 0.0}
-                connection.sendall(str.encode(json.dumps(response)))
-            except:
-                pass
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

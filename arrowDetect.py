@@ -1,15 +1,12 @@
 def arrowDetect(img_arr):
-	r = img_arr[0]
-	g = img_arr[1]
-	b = img_arr[2]
 	test_length = 6
 	threshold = 2
 	test_string = "".join(["1" for i in range(test_length)])
 	arrow_detect_strings = []
-	for i in range(len(r)):
+	for i in range(len(img_arr)):
 	    s = ""
-	    for j in range(len(r[0])):
-	        if b[i][j] > 160 and r[i][j] < 160:
+	    for j in range(len(img_arr[0])):
+	        if img_arr[i][j][2] > 160 and img_arr[i][j][0] < 160:
 	            s += "1"
 	        else:
 	            s += "0"

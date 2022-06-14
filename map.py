@@ -19,4 +19,4 @@ map1 = [
     [10,  7,  8, 14], # 15
 ]
 
-route1 = ([10, 11, 12, 13, 5], 1) # (nodes, initial_pos)
+route1 = ([10, 11], 1) # (nodes, initial_pos)

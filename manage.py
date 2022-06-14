@@ -95,12 +95,12 @@ class Ultrasonic():
 class WebController():
     def __init__(self, start, destination):
 
-        self.time = 0.
-        self.angle = 0.
-        self.throttle = 0.
+        # self.time = 0.
+        # self.angle = 0.
+        # self.throttle = 0.
         self.prevThrottle = 0.
-        self.mode = 'user'
-        self.recording = False
+        # self.mode = 'user'
+        # self.recording = False
         '''
         self.data = json.dumps({"start": start, "destination": destination})
         #use one session for all requests
@@ -145,11 +145,16 @@ class WebController():
     #         return 0.0,0.0,'user',False
     
     def run(self, img_arr=None):
-        if img_arr is None or self.prevThrottle == -1:
+        finish = self.prevThrottle == -1
+        recording = False
+        if img_arr is None:
             return 0.0, 0.0, 'user', False
         outdata = "request for control"
         if self.prevThrottle < 0.4:
             outdata = "request for start"
+        if finish:
+            recording = True
+            outdata = json.dumps(img_arr)
         print('send: ' + outdata)
         self.s.send(outdata.encode())
 
@@ -157,8 +162,8 @@ class WebController():
         data = json.loads(indata.decode())
         self.prevThrottle = float(data["throttle"])
         if float(data["throttle"]) == -1:
-            return 0.0, 0.0, 'user', True
-        return float(data["angle"]),float(data["throttle"]),'user',True
+            return 0.0, 0.0, 'user', recording
+        return float(data["angle"]),float(data["throttle"]),'user',recording
         
     def shutdown(self):
         pass

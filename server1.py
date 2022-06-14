@@ -5,9 +5,10 @@ from _thread import *
 import json
 from map import * 
 from steer import * 
+from arrowDetect import arrowDetect
 
 ServerSideSocket = socket.socket()
-host = '192.168.50.226'
+host = '192.168.43.85'
 port = 6531
 ThreadCount = 0
 angle = 0.0
@@ -38,6 +39,7 @@ def multi_threaded_client(connection):
     car_pos = route1[1]
     destination_index = len(route1[0]) - 1
     last_dis = 1201
+    last_dis_back = 1201
     
     while True:
         data = connection.recv(2048)
@@ -59,12 +61,12 @@ def multi_threaded_client(connection):
                 response = {"angle": 0.0, "throttle": 0.0}
 
             connection.sendall(str.encode(json.dumps(response)))
-        if req == "request for start":
+        elif req == "request for start":
             if finish:
                 throttle = -1
                 print("finish")
             elif measured:
-                if dis > 50:
+                if dis > 20:
                     print("throttle: ", 0.7, ", angle: ", angle)
                     response = {"angle": angle, "throttle": 0.7}
                 else:
@@ -75,7 +77,7 @@ def multi_threaded_client(connection):
                 response = {"angle": 0.0, "throttle": 0.0}
             
             connection.sendall(str.encode(json.dumps(response)))
-        if req[0:8] == "distance":
+        elif req[0:8] == "distance":
             measured = True
             if "distance" in req[8:]:
                 continue
@@ -85,10 +87,11 @@ def multi_threaded_client(connection):
                 dis_left = int(dis_list[1])
                 dis_right = int(dis_list[2])
                 dis_up = int(dis_list[3])
+                dis_back = int(dis_list[4])
 
                 throttle = dis/500
-                if throttle > 0.5:
-                    throttle = 0.5
+                if throttle > 0.4:
+                    throttle = 0.4
                 
                 right_angle = dis_right
                 left_angle = dis_left
@@ -110,10 +113,10 @@ def multi_threaded_client(connection):
                     left_angle *= 1
                 angle = left_angle + right_angle
 
-                if dis_up < 50: # Turn
+                if dis_up < 70 or dis_back < 70: # Turn
                     if dis > 15 and dis == last_dis:
                         throttle = 0.7
-                    if last_dis_up < 50:
+                    if last_dis_up < 70 or last_dis_back < 70:
                         if instruction == 0:
                             print("advance")
                             pass
@@ -128,6 +131,7 @@ def multi_threaded_client(connection):
                             finish = True # finish
                         else:
                             node = route[node_index]
+                            print(node)
                             node_index += 1
                             # node name
                             next_node = route[node_index]
@@ -142,9 +146,19 @@ def multi_threaded_client(connection):
                             elif instruction == 2 and dis_right > 3: # RIGHT
                                 print("right")
                                 angle = 1
+
                             car_pos = next_node_pos
                 last_dis_up = dis_up
+                last_dis_back = dis_back
                 last_dis = dis
+        else:
+            try:
+                img_arr = json.loads(req)
+                print("Arrow Detect: ", arrowDetect(img_arr))
+                response = {"angle": 0.0, "throttle": 0.0}
+                connection.sendall(str.encode(json.dumps(response)))
+            except:
+                pass
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

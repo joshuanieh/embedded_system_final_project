@@ -8,7 +8,8 @@ from steer import *
 from arrowDetect import arrowDetect
 
 ServerSideSocket = socket.socket()
-host = '192.168.43.85'
+# host = '192.168.43.85'
+host = '192.168.50.226'
 port = 6531
 ThreadCount = 0
 angle = 0.0
@@ -40,6 +41,7 @@ def multi_threaded_client(connection):
     destination_index = len(route1[0]) - 1
     last_dis = 1201
     last_dis_back = 1201
+    upset = False
     
     while True:
         data = connection.recv(2048)
@@ -51,6 +53,7 @@ def multi_threaded_client(connection):
             if finish:
                 throttle = -1
                 print("finish")
+                continue
             elif measured:
                 if dis > 20 and dis == last_dis: # Start up
                     throttle = 0.7
@@ -65,6 +68,7 @@ def multi_threaded_client(connection):
             if finish:
                 throttle = -1
                 print("finish")
+                continue
             elif measured:
                 if dis > 20:
                     print("throttle: ", 0.7, ", angle: ", angle)
@@ -113,10 +117,13 @@ def multi_threaded_client(connection):
                     left_angle *= 1
                 angle = left_angle + right_angle
 
-                if dis_up < 70 or dis_back < 70: # Turn
+                if dis_up < 70 or upset: # Turn
+                    if dis_up >= 70 and dis_back >= 70:
+                        upset = False
+                        continue
                     if dis > 15 and dis == last_dis:
                         throttle = 0.7
-                    if last_dis_up < 70 or last_dis_back < 70:
+                    if last_dis_up < 70 or (last_dis_back < 70 and upset):
                         if instruction == 0:
                             print("advance")
                             pass
@@ -129,6 +136,7 @@ def multi_threaded_client(connection):
                     else:
                         if node_index == destination_index:
                             finish = True # finish
+                            print("map finish")
                         else:
                             node = route[node_index]
                             print(node)
@@ -148,6 +156,7 @@ def multi_threaded_client(connection):
                                 angle = 1
 
                             car_pos = next_node_pos
+                    upset = True
                 last_dis_up = dis_up
                 last_dis_back = dis_back
                 last_dis = dis

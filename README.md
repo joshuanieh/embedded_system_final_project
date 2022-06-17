@@ -6,5 +6,7 @@ python3 server3.py
 
 ## Donkeycar
 Press reset buttons on the two STM32's
+
 cd mycar/
+
 python manage.py drive

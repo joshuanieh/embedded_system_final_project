@@ -8,7 +8,6 @@ from steer import *
 from arrowDetect import arrowDetect
 import time
 import math
-# from control import *
 
 ServerSideSocket = socket.socket()
 ServerSideSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -43,16 +42,21 @@ def multi_threaded_client(connection):
     # acc_x = 0
     # acc_y = 0
     # acc_z = 0
+
+    #control parameters
+    max_throttle = 0.75
+    angle_to_radius_ratio = 0.25
+
     
     #measurement records
+    record_count = 3
     last_dis_up = float("inf")
     last_dis_back = float("inf")
-    # last_dis = 0
     last_acc_x = 0
     last_acc_y = 0
     last_acc_z = 0
-    angle_record = [0 for i in range(3)]
-    throttle_record = [0 for i in range(3)]
+    angle_record = [0 for i in range(record_count)]
+    throttle_record = [0 for i in range(record_count)]
     
     
     #map
@@ -63,13 +67,11 @@ def multi_threaded_client(connection):
     destination_index = len(route_set[0]) - 1
 
     #in a node
-    roof_height = 30
+    roof_height = 35
     in_roof = False    #error correct about top back ultrasonic
     rotation_radius = 7
 
-    max_throttle = 0.72
-    angle_to_radius_ratio = 0.25
-
+    
     #unused
     # global duration
     # throttle_record = 0.0
@@ -81,6 +83,7 @@ def multi_threaded_client(connection):
     # initial_acc_z = 0
     # dis_left_record = [0 for i in range(5)]
     # dis_right_record = [0 for i in range(5)]
+    # last_dis = 0
 
     while True:
         data = connection.recv(2048)
@@ -95,6 +98,8 @@ def multi_threaded_client(connection):
                 throttle = -1
                 response = {"angle": angle, "throttle": throttle}
             elif measured:
+                print("throttle: ", throttle, ", angle: ", angle)
+                response = {"angle": angle, "throttle": throttle}
                 # mutex.acquire()
                 # if time.time() - time_record > duration:
                 #     # duration = 0.8
@@ -103,8 +108,6 @@ def multi_threaded_client(connection):
                 # print("throttle: ", throttle_record, ", angle: ", angle)
                 # response = {"angle": angle, "throttle": throttle_record}
                 # mutex.release()
-                print("throttle: ", throttle, ", angle: ", angle)
-                response = {"angle": angle, "throttle": throttle}
 
             else:
                 print("throttle: ", 0.0, ", angle: ", 0.0)
@@ -150,8 +153,8 @@ def multi_threaded_client(connection):
             dis_left = int(dis_list[1])
             dis_right = int(dis_list[2])
             dis_up = int(dis_list[3])
-            print("=================")
-            print("distance up:", dis_up)
+            # print("=================")
+            # print("distance up:", dis_up)
             dis_back = int(dis_list[4])
             acc_x = float(dis_list[6])
             acc_y = float(dis_list[7])
@@ -188,7 +191,7 @@ def multi_threaded_client(connection):
             try:
                 t = min(15 / delta_acc, max_throttle)
             except:
-                t = max_throttle + 0.1 * abs(angle)
+                t = max_throttle + 0.08 * abs(angle)
                 # if abs(angle) == 1:
                 #     t = 0.75
             # throttle = math.log(dis)
@@ -233,9 +236,9 @@ def multi_threaded_client(connection):
                     # throttle_record = 0.65
                     if delta_acc < 5:
                         try:
-                            t = min(1, 1 / delta_acc + 0.5)
+                            t = min(0.85, 1 / delta_acc + 0.5)
                         except:
-                            t = 1
+                            t = 0.85
                     
                 if dis_up >= roof_height and dis_back >= roof_height:
                     in_roof = False
@@ -253,11 +256,28 @@ def multi_threaded_client(connection):
                 else:
                     if node_index == destination_index:
                         instruction = -1
-                        finish = True
+                        # finish = True
                         print("arrive final node")
                     else:
                         node = route[node_index]
                         print("=====================")
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
+                        print("node:", node)
                         print("node:", node)
                         print("=====================")
                         node_index += 1
@@ -299,8 +319,14 @@ def multi_threaded_client(connection):
             throttle = sum(throttle_record)/len(throttle_record)
             print(throttle, angle)
             # mutex.release()
-        elif req[0:2] == "NFC":
+        elif req[0:3] == "NFC":
             finish = True
+            print("NFC")
+            print("NFC")
+            print("NFC")
+            print("NFC")
+            print("NFC")
+            print("NFC")
     connection.close()
 while True:
     Client, address = ServerSideSocket.accept()

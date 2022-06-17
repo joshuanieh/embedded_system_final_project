@@ -146,15 +146,9 @@ class WebController():
     
     def run(self, img_arr=None):
         finish = self.prevThrottle == -1
-        recording = False
-        if img_arr is None:
+        if img_arr is None or finish:
             return 0.0, 0.0, 'user', False
         outdata = "request for control"
-        if self.prevThrottle < 0.4:
-            outdata = "request for start"
-        if finish:
-            recording = True
-            outdata = json.dumps(img_arr)
         print('send: ' + outdata)
         self.s.send(outdata.encode())
 
@@ -162,8 +156,8 @@ class WebController():
         data = json.loads(indata.decode())
         self.prevThrottle = float(data["throttle"])
         if float(data["throttle"]) == -1:
-            return 0.0, 0.0, 'user', recording
-        return float(data["angle"]),float(data["throttle"]),'user',recording
+            return 0.0, 0.0, 'user', False
+        return float(data["angle"]),float(data["throttle"]),'user',False
         
     def shutdown(self):
         pass

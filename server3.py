@@ -12,7 +12,7 @@ import math
 
 ServerSideSocket = socket.socket()
 ServerSideSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-host = '192.168.43.85'
+host = '192.168.43.36'
 # host = '192.168.50.226'
 port = 6531
 ThreadCount = 0
@@ -35,6 +35,7 @@ def multi_threaded_client(connection):
     global angle
     global finish
     global measured
+    global ThreadCount
 
     #mbed measurements
     # dis = 100.0
@@ -94,7 +95,7 @@ def multi_threaded_client(connection):
                 print("finish")
                 throttle = -1
                 response = {"angle": angle, "throttle": throttle}
-            elif measured:
+            elif measured and ThreadCount == 3:
                 # mutex.acquire()
                 # if time.time() - time_record > duration:
                 #     # duration = 0.8
@@ -188,7 +189,7 @@ def multi_threaded_client(connection):
             try:
                 t = min(15 / delta_acc, max_throttle)
             except:
-                t = max_throttle + 0.1 * abs(angle)
+                t = max_throttle + 0.05 * abs(angle)
                 # if abs(angle) == 1:
                 #     t = 0.75
             # throttle = math.log(dis)
@@ -253,7 +254,7 @@ def multi_threaded_client(connection):
                 else:
                     if node_index == destination_index:
                         instruction = -1
-                        finish = True
+                        # finish = True
                         print("arrive final node")
                     else:
                         node = route[node_index]
@@ -300,6 +301,7 @@ def multi_threaded_client(connection):
             print(throttle, angle)
             # mutex.release()
         elif req[0:2] == "NFC":
+            print("NFC success")
             finish = True
     connection.close()
 while True:
@@ -307,5 +309,23 @@ while True:
     print('Connected to: ' + address[0] + ':' + str(address[1]))
     start_new_thread(multi_threaded_client, (Client, ))
     ThreadCount += 1
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
+    print('Thread Number: ' + str(ThreadCount))
     print('Thread Number: ' + str(ThreadCount))
 ServerSideSocket.close()
